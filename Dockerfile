@@ -1,17 +1,25 @@
-# Use official OpenJDK image
-FROM eclipse-temurin:17-jdk-alpine
+# -------- Build Stage --------
+FROM eclipse-temurin:17-jdk-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy project files
+# Copy everything
 COPY . .
 
-# Build application
+# Give execute permission to gradlew
+RUN chmod +x gradlew
+
+# Build jar
 RUN ./gradlew build -x test
 
-# Expose port
+# -------- Run Stage --------
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# Copy built jar from build stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
 EXPOSE 8080
 
-# Run application
-CMD ["java", "-jar", "build/libs/mini-ecom-backend-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "app.jar"]
